@@ -3,13 +3,27 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\authorization;
 
 class APIController extends Controller
 {
     public function getAuthorization() {
+        if(session("authorization")) {
+            $result = authorization::where([["authorization", session("authorization")], ["is_used", 0]])->count();
+            if($result) {
+                return response()->json([
+                    "authorization" => session("authorization"),
+                ]);
+            }
+        }
         $token = $this->generateRandomString(255);
 
         session(["authorization" => $token]);
+        
+        authorization::create([
+            "authorization" => $token,
+            "is_used" => 0,
+        ]);
 
         return response()->json([
             "Authorization" => $token
@@ -19,9 +33,19 @@ class APIController extends Controller
     public function apiTest(Request $request) {
         $authorization = $request->header("Authorization");
         $content_type = $request->header("content-type");
-        $session_authorization = session('authorization');
 
-        if($authorization != "Bearer $session_authorization") {
+        if(!str_contains($authorization, "Bearer ")) {
+            return response()->json([
+                "error" => [
+                    "message" => "Invalid authorization key. Authorization Failed."
+                ],
+            ]);
+        }
+
+        $authorization = explode(" ", $authorization)[1];
+        $count = authorization::where([["authorization", $authorization], ["is_used", 0]])->count();
+
+        if(!$count) {
             return response()->json([
                 "error" => [
                     "message" => "Invalid authorization key. Authorization Failed."
@@ -55,6 +79,8 @@ class APIController extends Controller
                 ],
             ]);
         }
+
+        authorization::where("authorization", $authorization)->update(["is_used" => 1]);
 
         return response()->json([
             "success" => [
