@@ -42,16 +42,16 @@ class APIController extends Controller
 
         if($username == NULL || $password == NULL ) {
             return response()->json([
-                "error" => ["
-                    message" => "Username and Password is required."
+                "error" => [
+                    "message" => "Username and Password is required."
                 ],
             ]);
         }
 
         if($username != $password) {
             return response()->json([
-                "error" => ["
-                    message" => "Invalid username and password"
+                "error" => [
+                    "message" => "Invalid username and password"
                 ],
             ]);
         }
